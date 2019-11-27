@@ -1,12 +1,13 @@
-package algorand
+package triam
 
 import (
-	"strconv"
-
-	"github.com/algorand/go-algorand-sdk/client/algod"
 	"github.com/astaxie/beego/config"
 	"github.com/blocktree/openwallet/log"
 	"github.com/blocktree/openwallet/openwallet"
+	hClient "github.com/stellar/go/clients/horizonclient"
+	oldHClient "github.com/triamnetwork/triam-horizon/clients/horizon"
+
+	"net/http"
 )
 
 //CurveType 曲线类型
@@ -26,7 +27,7 @@ func (wm *WalletManager) Symbol() string {
 
 //Decimal 小数位精度
 func (wm *WalletManager) Decimal() int32 {
-	return 6
+	return wm.Config.Decimal
 }
 
 //BalanceModelType 余额模型类别
@@ -53,14 +54,21 @@ func (wm *WalletManager) GetBlockScanner() openwallet.BlockScanner {
 func (wm *WalletManager) LoadAssetsConfig(c config.Configer) error {
 
 	wm.Config.ServerAPI = c.String("ServerAPI")
-	wm.Config.ServerToken = c.String("ServerToken")
 	wm.Config.FixFees = c.String("FixFees")
-	validRounds, _ := strconv.ParseUint(c.String("ValidRounds"), 10, 64)
-	wm.Config.ValidRounds = validRounds
+	wm.Config.Network = c.String("Network")
 	wm.Config.AddressRetainAmount = c.String("AddressRetainAmount")
 
-	client, _ := algod.MakeClient(wm.Config.ServerAPI, wm.Config.ServerToken)
-	wm.client = &client
+	//stellar客户端
+	wm.tclient = &hClient.Client{
+		HorizonURL: wm.Config.ServerAPI + "/",
+		HTTP:       http.DefaultClient,
+	}
+	//老的traim客户端
+	wm.oldTclient = &oldHClient.Client{
+		URL:  wm.Config.ServerAPI,
+		HTTP: http.DefaultClient,
+	}
+
 	return nil
 }
 

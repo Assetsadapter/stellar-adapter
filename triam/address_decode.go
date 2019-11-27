@@ -13,12 +13,12 @@
  * GNU Lesser General Public License for more details.
  */
 
-package algorand
+package triam
 
 import (
 	"fmt"
 
-	"github.com/blocktree/algorand-adapter/address_decode"
+	"github.com/Assetsadapter/triam-adapter/address_decode"
 )
 
 type AddressDecoder struct {

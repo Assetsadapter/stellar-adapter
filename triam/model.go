@@ -1,79 +1,50 @@
-package algorand
+package triam
 
 import (
-	"encoding/json"
 	"fmt"
-	"math/big"
-	"strconv"
-
 	"github.com/algorand/go-algorand-sdk/client/algod/models"
 	"github.com/blocktree/openwallet/common"
 	"github.com/blocktree/openwallet/crypto"
 	"github.com/blocktree/openwallet/openwallet"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 )
-
-type AddrBalance struct {
-	Address      string
-	Balance      *big.Int
-	TokenBalance *big.Int
-}
 
 func NewAddrBalance(b *openwallet.Balance) *AddrBalance {
 	obj := AddrBalance{}
 	obj.Address = b.Address
 
-	balance, err := strconv.ParseInt(b.ConfirmBalance, 10, 64)
-	if err != nil {
-		balance = 0
-	}
-	obj.Balance = big.NewInt(balance)
+	obj.Balance = b.Balance
 
 	return &obj
 }
 
-type txFeeInfo struct {
-	GasUsed  *big.Int
-	GasPrice *big.Int
-	Fee      *big.Int
-}
+func NewAddrAssetsBalance(b *openwallet.TokenBalance) *AddrBalance {
+	obj := AddrBalance{}
+	obj.Address = b.Balance.Address
 
-func (f *txFeeInfo) CalcFee() error {
-	fee := new(big.Int)
-	fee.Mul(f.GasUsed, f.GasPrice)
-	f.Fee = fee
-	return nil
+	obj.Balance = b.Balance.Balance
+
+	return &obj
 }
 
 type Block struct {
-	Hash             string
-	CurrentProtocol  string
-	PrevBlockHash    string
-	TransactionsRoot string
-	Proposer         string
-	Time             int64
-	Height           uint64
-	Transactions     []string
+	Hash            string
+	PrevBlockHash   string
+	Time            int64
+	Height          uint64
+	TransactionsCnt uint64
+	Transactions    []string
 }
 
-func NewBlock(block models.Block) *Block {
+func NewBlock(block hProtocol.Ledger) *Block {
+
 	obj := Block{}
 	//解析json
 	obj.Hash = block.Hash
-	obj.CurrentProtocol = block.CurrentProtocol
-	obj.PrevBlockHash = block.PreviousBlockHash
-	obj.TransactionsRoot = block.TransactionsRoot
-	obj.Height = block.Round
-	obj.Proposer = block.Proposer
-	obj.Time = block.Timestamp
-
-	txs := make([]string, 0)
-	for _, t := range block.Transactions.Transactions {
-		tx, _ := json.Marshal(t)
-		txs = append(txs, string(tx))
-	}
-	obj.Transactions = txs
-
+	obj.PrevBlockHash = block.PrevHash
+	obj.Height = uint64(block.Sequence)
 	return &obj
+
 }
 
 //BlockHeader 区块链头

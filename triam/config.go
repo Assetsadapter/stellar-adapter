@@ -1,4 +1,4 @@
-package algorand
+package triam
 
 import (
 	"path/filepath"
@@ -10,9 +10,9 @@ import (
 
 const (
 	//币种
-	Symbol    = "ALGO"
+	Symbol    = "RIA"
 	CurveType = owcrypt.ECC_CURVE_ED25519
-
+	Decimal   = 7
 	//默认配置内容
 	defaultConfig = `
 
@@ -25,6 +25,8 @@ type WalletConfig struct {
 
 	//币种
 	Symbol string
+	//精度
+	Decimal int32
 	//配置文件路径
 	configFilePath string
 	//配置文件名
@@ -35,19 +37,16 @@ type WalletConfig struct {
 	dbPath string
 	//钱包服务API
 	ServerAPI string
-	//algod service token
-	ServerToken string
+
 	//默认配置内容
 	DefaultConfig string
 	//曲线类型
 	CurveType uint32
 	//链ID
-	NetworkID string
+	Network string
 	//固定手续费
 	FixFees string
-	// ValidRounds limits valid rounds delay count
-	ValidRounds uint64
-	// force address to retain the balance
+
 	AddressRetainAmount string
 }
 
@@ -58,7 +57,7 @@ func NewConfig(symbol string) *WalletConfig {
 	//币种
 	c.Symbol = symbol
 	c.CurveType = CurveType
-
+	c.Decimal = Decimal
 	//区块链数据
 	//blockchainDir = filepath.Join("data", strings.ToLower(Symbol), "blockchain")
 	//配置文件路径
@@ -72,12 +71,8 @@ func NewConfig(symbol string) *WalletConfig {
 	//钱包服务algod API
 	c.ServerAPI = ""
 	//algod token
-	c.ServerToken = ""
 	//固定手续费
 	c.FixFees = "0"
-	//ValidRounds counts
-	c.ValidRounds = 1000
-	c.AddressRetainAmount = "0.1"
 
 	//创建目录
 	file.MkdirAll(c.dbPath)

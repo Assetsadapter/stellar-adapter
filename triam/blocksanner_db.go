@@ -1,4 +1,4 @@
-package algorand
+package triam
 
 import (
 	"fmt"
@@ -99,7 +99,7 @@ func (wm *WalletManager) DeleteUnscanRecord(height uint64) error {
 }
 
 //SaveTxToWalletDB 保存交易记录到钱包数据库
-func (bs *AlgoBlockScanner) SaveUnscanRecord(record *UnscanRecord) error {
+func (bs *TriamBlockScanner) SaveUnscanRecord(record *UnscanRecord) error {
 
 	if record == nil {
 		return fmt.Errorf("the unscan record to save is nil")

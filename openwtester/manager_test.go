@@ -21,7 +21,7 @@ func testInitWalletManager() *openw.WalletManager {
 	tc.ConfigDir = configFilePath
 	tc.EnableBlockScan = false
 	tc.SupportAssets = []string{
-		"ALGO",
+		"RIO",
 	}
 	return openw.NewWalletManager(tc)
 	//tm.Init()
@@ -29,7 +29,7 @@ func testInitWalletManager() *openw.WalletManager {
 
 func TestWalletManager_CreateWallet(t *testing.T) {
 	tm := testInitWalletManager()
-	w := &openwallet.Wallet{Alias: "HELLO ALGO", IsTrust: true, Password: "12345678"}
+	w := &openwallet.Wallet{Alias: "HELLO triam", IsTrust: true, Password: "12345678"}
 	nw, key, err := tm.CreateWallet(testApp, w)
 	if err != nil {
 		log.Error(err)
@@ -45,7 +45,7 @@ func TestWalletManager_GetWalletInfo(t *testing.T) {
 
 	tm := testInitWalletManager()
 
-	wallet, err := tm.GetWalletInfo(testApp, "W2hCwchcXHYAPSBw4CUgYqG6qxRHjdoeU4")
+	wallet, err := tm.GetWalletInfo(testApp, "WBZo67pUb6iVdpt52eSbDcBULubwuUVT6S")
 	if err != nil {
 		log.Error("unexpected error:", err)
 		return
@@ -74,8 +74,8 @@ func TestWalletManager_CreateAssetsAccount(t *testing.T) {
 
 	tm := testInitWalletManager()
 
-	walletID := "W2hCwchcXHYAPSBw4CUgYqG6qxRHjdoeU4"
-	account := &openwallet.AssetsAccount{Alias: "mainnetALGO", WalletID: walletID, Required: 1, Symbol: "ALGO", IsTrust: true}
+	walletID := "WBZo67pUb6iVdpt52eSbDcBULubwuUVT6S"
+	account := &openwallet.AssetsAccount{Alias: "rio-deposit", WalletID: walletID, Required: 1, Symbol: "RIO", IsTrust: true}
 	account, address, err := tm.CreateAssetsAccount(testApp, walletID, "12345678", account, nil)
 	if err != nil {
 		log.Error(err)
@@ -92,7 +92,7 @@ func TestWalletManager_GetAssetsAccountList(t *testing.T) {
 
 	tm := testInitWalletManager()
 
-	walletID := "W2hCwchcXHYAPSBw4CUgYqG6qxRHjdoeU4"
+	walletID := "WBZo67pUb6iVdpt52eSbDcBULubwuUVT6S"
 	list, err := tm.GetAssetsAccountList(testApp, walletID, 0, 10000000)
 	if err != nil {
 		log.Error("unexpected error:", err)
@@ -111,8 +111,8 @@ func TestWalletManager_CreateAddress(t *testing.T) {
 
 	tm := testInitWalletManager()
 
-	walletID := "W2hCwchcXHYAPSBw4CUgYqG6qxRHjdoeU4"
-	accountID := "FQ5w33qE248vQd9AHsth8HtFUR4KYp22F6ReDSg2g8qM"
+	walletID := "WBZo67pUb6iVdpt52eSbDcBULubwuUVT6S"
+	accountID := "3W6kfFoFBs8oC8D1SQ1sRJHAew3rStqQRbGbaujAQB9F"
 	list, err := tm.CreateAddress(testApp, walletID, accountID, 3)
 	if err != nil {
 		log.Error(err)
