@@ -126,6 +126,6 @@ func TestBuildTrustTransaction(t *testing.T) {
 		Signature: xdr.Signature(sig),
 	}
 	tx.XdrEnvelope.Signatures = append(tx.XdrEnvelope.Signatures, xdrSig)
-
+	tx.XdrEnvelope.
 	postTransaction(tx)
 }

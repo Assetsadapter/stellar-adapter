@@ -68,7 +68,7 @@ func (decoder *TransactionDecoder) CreateRawSimpleTransaction(wrapper openwallet
 		break
 	}
 	//检查目标账户是否存在
-	if decoder.wm.Blockscanner.AccountExists(destAddr) {
+	if !decoder.wm.Blockscanner.AccountExists(destAddr) {
 		return openwallet.Errorf(10000, "account not exists")
 
 	}
@@ -112,7 +112,7 @@ func (decoder *TransactionDecoder) CreateRawSimpleTransaction(wrapper openwallet
 		return openwallet.Errorf(openwallet.ErrInsufficientBalanceOfAccount, "all address's balance of account is not enough, an address required to retain at least %s algos", retainAmount)
 	}
 	//检查源账户是否存在
-	if decoder.wm.Blockscanner.AccountExists(findAddrBalance.Address) {
+	if !decoder.wm.Blockscanner.AccountExists(findAddrBalance.Address) {
 		return openwallet.Errorf(10000, "account not exists")
 
 	}
@@ -151,12 +151,20 @@ func (decoder *TransactionDecoder) CreateRawAssetsTransaction(wrapper openwallet
 	}
 
 	var amountStr string
-	for _, v := range rawTx.To {
+	var destAddr string
+
+	for k, v := range rawTx.To {
 		amountStr = v
+		destAddr = k
 		break
 	}
 
 	amountSent, _ := decimal.NewFromString(amountStr)
+	//检查目标账户是否存在
+	if !decoder.wm.Blockscanner.AccountExists(destAddr) {
+		return openwallet.Errorf(10000, "account not exists")
+
+	}
 
 	for _, addr := range addresses {
 		resp, _ := decoder.wm.ContractDecoder.GetTokenBalanceByAddress(rawTx.Coin.Contract, addr.Address)
