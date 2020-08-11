@@ -1,4 +1,4 @@
-package triam
+package stellar
 
 import (
 	"fmt"
@@ -230,7 +230,7 @@ func (bs *TriamBlockScanner) GetGlobalMaxBlockHeight() uint64 {
 
 //GetTransaction
 func (bs *TriamBlockScanner) GetTransaction(hash string) (*Transaction, error) {
-	r, err := bs.wm.client.TransactionByID(hash)
+	r, err := bs.wm.client.TransactionDetail(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -480,7 +480,7 @@ func (bs *TriamBlockScanner) newBlockNotify(block *Block, isFork bool) {
 
 //获取一个区块所有transaction
 func (bs *TriamBlockScanner) GetTransactionByBlock(blockHeight uint64) ([]horizon.Transaction, error) {
-	ledgerTx, err := bs.wm.tclient.Transactions(hClient.TransactionRequest{ForLedger: uint(blockHeight)})
+	ledgerTx, err := bs.wm.tclient.Transactions(hClient.TransactionRequest{ForLedger: uint(blockHeight),Limit: 200})
 	if err != nil {
 		log.Error(err)
 	}
@@ -682,8 +682,8 @@ func (bs *TriamBlockScanner) ExtractTransaction(blockHeight uint64, blockHash st
 		return result
 	}
 	txMemo := tx.Memo //提取交易memo
-	decimalFee := decimal.New(1, int32(bs.wm.Config.Decimal))
-	decimalFeePayed := decimal.New(int64(tx.FeePaid), 0)
+	decimalFee := decimal.New(1,bs.wm.Config.Decimal)
+	decimalFeePayed := decimal.New(tx.FeeCharged, 0)
 	feePayed := decimalFeePayed.Div(decimalFee).String()
 	//提出易单明细
 	for _, payment := range txPayOperations {

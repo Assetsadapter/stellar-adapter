@@ -1,17 +1,17 @@
-package triam
+package stellar
 
 import (
 	"encoding/base64"
 	"encoding/hex"
-	"github.com/Assetsadapter/triam-adapter/triam/txnbuild"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/go/xdr"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/Assetsadapter/triam-adapter/txsigner"
+	"github.com/Assetsadapter/stellar-adapter/txsigner"
 	"github.com/blocktree/go-owcrypt"
 	"github.com/blocktree/openwallet/log"
 	"github.com/blocktree/openwallet/openwallet"
@@ -67,8 +67,9 @@ func (decoder *TransactionDecoder) CreateRawSimpleTransaction(wrapper openwallet
 		amountStr = v
 		break
 	}
+	log.Info(destAddr)
 	//检查目标账户是否存在
-	if !decoder.wm.Blockscanner.AccountExists(destAddr) {
+	if !decoder.wm.Config.IsCreateNotExistsAccount && !decoder.wm.Blockscanner.AccountExists(destAddr) {
 		return openwallet.Errorf(10000, "account not exists")
 
 	}
@@ -158,6 +159,7 @@ func (decoder *TransactionDecoder) CreateRawAssetsTransaction(wrapper openwallet
 		destAddr = k
 		break
 	}
+	log.Info(destAddr)
 
 	amountSent, _ := decimal.NewFromString(amountStr)
 	//检查目标账户是否存在
@@ -306,7 +308,7 @@ func (decoder *TransactionDecoder) VerifyRawTransaction(wrapper openwallet.Walle
 				Hint:      xdr.SignatureHint(kp.Hint()),
 				Signature: xdr.Signature(signature),
 			}
-			txn.Signatures = append(txn.Signatures, xdrSig)
+			txn.V0.Signatures = append(txn.V0.Signatures, xdrSig)
 
 			// Encode the SignedTxn
 			rawTx.IsCompleted = true
@@ -326,7 +328,14 @@ func (decoder *TransactionDecoder) VerifyRawTransaction(wrapper openwallet.Walle
 
 //SendRawTransaction 广播交易单
 func (decoder *TransactionDecoder) SubmitRawTransaction(wrapper openwallet.WalletDAI, rawTx *openwallet.RawTransaction) (*openwallet.Transaction, error) {
-	resp, err := decoder.wm.oldTclient.SubmitTransaction(rawTx.RawHex)
+	//var (
+	//	txn xdr.TransactionEnvelope
+	//)
+	//rawXdr, _ := hex.DecodeString(rawTx.RawHex)
+	//err := txn.UnmarshalBinary(rawXdr)
+	//txXdr, err := txn.MarshalBinary()
+	//txBase64 := base64.StdEncoding.EncodeToString(txXdr)
+	resp, err := decoder.wm.client.SubmitTransactionXDR(rawTx.RawHex)
 	if err != nil {
 		return nil, err
 	}
@@ -360,8 +369,8 @@ func (decoder *TransactionDecoder) SubmitRawTransaction(wrapper openwallet.Walle
 
 //GetRawTransactionFeeRate 获取交易单的费率
 func (decoder *TransactionDecoder) GetRawTransactionFeeRate() (feeRate string, unit string, err error) {
-	suggestedFeeRate, err := decoder.wm.client.SuggestedFee()
-	return strconv.FormatUint(suggestedFeeRate.Fee, 10), decoder.wm.Config.Symbol, err
+	suggestedFeeRate, err := decoder.wm.client.FeeStats()
+	return strconv.FormatInt(suggestedFeeRate.FeeCharged.P99, 10), decoder.wm.Config.Symbol, err
 }
 
 //汇总币种
@@ -595,18 +604,35 @@ func (decoder *TransactionDecoder) createRawTransaction(
 	if err != nil {
 		return err
 	}
-	currentSeq := decoder.wm.Blockscanner.getAccountSeq(addrBalance.Address)
+	currentSeq := decoder.wm.Blockscanner.getAccountSeq(addrBalance.Address)+1
 	txSourceAccount := NewSimpleAccount2(addrBalance.Address, currentSeq)
 
 	//存在直接转账
 	//txn, err := transaction.MakePaymentTxn(addrBalance.Address, destination, suggestedParams.Fee, amount.Uint64(), suggestedParams.LastRound, suggestedParams.LastRound+validRounds, []byte(""), "", suggestedParams.GenesisID, suggestedParams.GenesisHash)
 	var payment txnbuild.Payment
-	if !rawTx.Coin.IsContract { //RIA 主币
+	var createAccount txnbuild.CreateAccount
+	var operations []txnbuild.Operation
+	if !rawTx.Coin.IsContract { //xlm 主币
+	     amountTo,_ := decimal.NewFromString(amountStr)
+		if !decoder.wm.Blockscanner.AccountExists(destination) && decoder.wm.Config.IsCreateNotExistsAccount {
+			decimal.New(1,0)
+			if amountTo.Cmp(decimal.New(1,0)) <=0 {
+				return openwallet.Errorf(openwallet.ErrCreateRawTransactionFailed, "dest amount must bigger than one")
+			}
+			//从打款数量扣除一个来创建账号
+			createAccount = txnbuild.CreateAccount{
+				Destination: destination,
+				Amount:      "1",
+			}
+			operations = append(operations,&createAccount )
+			amountTo = amountTo.Sub(decimal.New(1,0))
+		}
 		payment = txnbuild.Payment{
 			Destination: destination,
-			Amount:      amountStr,
+			Amount:      amountTo.String(),
 			Asset:       txnbuild.NativeAsset{},
 		}
+		operations = append(operations,&payment )
 	} else { //资产Assets
 		payment = txnbuild.Payment{
 			Destination: destination,
@@ -618,41 +644,43 @@ func (decoder *TransactionDecoder) createRawTransaction(
 	if len(rawTx.ExtParam) != 0 {
 		memoText = rawTx.GetExtParam().Get("memo").String()
 	}
-	var tx txnbuild.Transaction
+	var txParam txnbuild.TransactionParams
 	if len(memoText) != 0 {
-		tx = txnbuild.Transaction{
+		txParam = txnbuild.TransactionParams{
 			BaseFee:       10000,
 			SourceAccount: &txSourceAccount,
-			Operations:    []txnbuild.Operation{&payment},
+			Operations:    operations,
 			Timebounds:    txnbuild.NewInfiniteTimeout(),
-			Network:       decoder.wm.Config.Network,
 			Memo:          txnbuild.MemoText(memoText),
 		}
 	} else {
-		tx = txnbuild.Transaction{
+		txParam = txnbuild.TransactionParams{
 			BaseFee:       10000,
 			SourceAccount: &txSourceAccount,
-			Operations:    []txnbuild.Operation{&payment},
+			Operations:    operations,
 			Timebounds:    txnbuild.NewInfiniteTimeout(),
-			Network:       decoder.wm.Config.Network,
 		}
 	}
-	err = tx.Build()
+
+	tx,err := txnbuild.NewTransaction(txParam)
+	if err != nil {
+		return err
+	}
+	tx.TxEnvelope()
+	hash, err := tx.Hash(decoder.wm.Config.Network)
 	if err != nil {
 		return err
 	}
 
-	if tx.XdrEnvelope == nil {
-		tx.XdrEnvelope = &xdr.TransactionEnvelope{}
-		tx.XdrEnvelope.Tx = tx.XdrTransaction
-	}
-	hash, err := tx.Hash()
+	txEnvelop, err := tx.TxEnvelope()
 	if err != nil {
 		return err
 	}
-
-	txXdr, _ := tx.XdrEnvelope.MarshalBinary()
-	rawTx.RawHex = hex.EncodeToString(txXdr)
+	txXdrBytes, err :=  txEnvelop.MarshalBinary()
+	if err != nil {
+		return err
+	}
+	rawTx.RawHex = hex.EncodeToString(txXdrBytes)
 	if rawTx.Signatures == nil {
 		rawTx.Signatures = make(map[string][]*openwallet.KeySignature)
 	}
@@ -665,7 +693,8 @@ func (decoder *TransactionDecoder) createRawTransaction(
 	keySignList = append(keySignList, &signature)
 
 	//固定费用
-	feesAmount, _ := decimal.NewFromString("0.001")
+	baseFeesAmount, _ := decimal.NewFromString("0.00001")
+	feesAmount := baseFeesAmount.Mul(decimal.New(int64(len(operations)),0))
 	//主币加上交易费
 	if !rawTx.Coin.IsContract {
 		accountTotalSent = accountTotalSent.Add(feesAmount)

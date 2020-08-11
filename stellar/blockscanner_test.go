@@ -1,4 +1,4 @@
-package triam
+package stellar
 
 import (
 	"testing"

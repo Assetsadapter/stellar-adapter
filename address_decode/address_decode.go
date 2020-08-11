@@ -4,7 +4,7 @@ import (
 	"crypto/sha512"
 	"encoding/base32"
 	"errors"
-	"github.com/triamnetwork/triam-horizon/crc16"
+	"github.com/stellar/go/crc16"
 )
 
 /**

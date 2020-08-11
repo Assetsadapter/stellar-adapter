@@ -1,4 +1,4 @@
-package triam
+package stellar
 
 import (
 	"fmt"
@@ -77,15 +77,12 @@ type Transaction struct {
 	Payment     *models.PaymentTransactionType `json:"payment,omitempty"`
 }
 
-func NewTransaction(tx models.Transaction) *Transaction {
+func NewTransaction(tx hProtocol.Transaction) *Transaction {
 	obj := Transaction{}
-	obj.Type = string(tx.Type)
-	obj.BlockHeight = tx.ConfirmedRound
-	obj.GenesisID = tx.GenesisID
-	obj.Fee = tx.Fee
-	obj.TxID = tx.TxID
-	obj.From = tx.From
-	obj.Payment = tx.Payment
+	obj.BlockHeight = uint64(tx.Ledger)
+	obj.Fee = uint64(tx.FeeCharged)
+	obj.TxID = tx.ID
+	obj.From = tx.Account
 	return &obj
 }
 

@@ -1,12 +1,10 @@
-package triam
+package stellar
 
 import (
 	"github.com/astaxie/beego/config"
 	"github.com/blocktree/openwallet/log"
 	"github.com/blocktree/openwallet/openwallet"
 	hClient "github.com/stellar/go/clients/horizonclient"
-	oldHClient "github.com/triamnetwork/triam-horizon/clients/horizon"
-
 	"net/http"
 )
 
@@ -54,21 +52,16 @@ func (wm *WalletManager) GetBlockScanner() openwallet.BlockScanner {
 func (wm *WalletManager) LoadAssetsConfig(c config.Configer) error {
 
 	wm.Config.ServerAPI = c.String("ServerAPI")
-	wm.Config.FixFees = c.String("FixFees")
 	wm.Config.Network = c.String("Network")
 	wm.Config.AddressRetainAmount = c.String("AddressRetainAmount")
-
+	wm.Config.IsCreateNotExistsAccount = c.DefaultBool("IsCreateNotExistsAccount",false)
+	wm.Config.BaseFee = c.DefaultString("BaseFee","0.00001")
 	//stellar客户端
 	wm.tclient = &hClient.Client{
 		HorizonURL: wm.Config.ServerAPI + "/",
 		HTTP:       http.DefaultClient,
 	}
-	//老的traim客户端
-	wm.oldTclient = &oldHClient.Client{
-		URL:  wm.Config.ServerAPI,
-		HTTP: http.DefaultClient,
-	}
-
+	wm.client=wm.tclient
 	return nil
 }
 

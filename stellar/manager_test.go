@@ -1,14 +1,14 @@
-package triam
+package stellar
 
 import (
 	"fmt"
+	"github.com/stellar/go/keypair"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/astaxie/beego/config"
 
-	"github.com/stellar/go/keypair"
 )
 
 var (
@@ -19,7 +19,7 @@ func testNewWalletManager() *WalletManager {
 	wm := NewWalletManager()
 
 	//读取配置
-	absFile := filepath.Join("conf", "conf.ini")
+	absFile := filepath.Join("../conf", "RIA.ini")
 	//log.Debug("absFile:", absFile)
 	c, err := config.NewConfig("ini", absFile)
 	if err != nil {

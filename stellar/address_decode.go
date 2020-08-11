@@ -13,12 +13,11 @@
  * GNU Lesser General Public License for more details.
  */
 
-package triam
+package stellar
 
 import (
 	"fmt"
-
-	"github.com/Assetsadapter/triam-adapter/address_decode"
+	"github.com/Assetsadapter/stellar-adapter/address_decode"
 )
 
 type AddressDecoder struct {

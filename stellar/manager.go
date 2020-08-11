@@ -1,11 +1,9 @@
-package triam
+package stellar
 
 import (
-	"github.com/algorand/go-algorand-sdk/client/algod"
 	"github.com/blocktree/openwallet/log"
 	"github.com/blocktree/openwallet/openwallet"
 	hClient "github.com/stellar/go/clients/horizonclient"
-	oldhClient "github.com/triamnetwork/triam-horizon/clients/horizon"
 )
 
 type WalletManager struct {
@@ -17,10 +15,8 @@ type WalletManager struct {
 	Log             *log.OWLogger                   //日志工具
 	ContractDecoder openwallet.SmartContractDecoder //智能合约解析器
 	Blockscanner    *TriamBlockScanner              //区块扫描器
-	client          *algod.Client                   //algod client
-
+	client          *hClient.Client                   //algod client
 	tclient    *hClient.Client    //stellar horizonclient client
-	oldTclient *oldhClient.Client //triam horizonclient client
 }
 
 func NewWalletManager() *WalletManager {

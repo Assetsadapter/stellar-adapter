@@ -1,4 +1,4 @@
-package triam
+package stellar
 
 import (
 	"path/filepath"
@@ -10,7 +10,7 @@ import (
 
 const (
 	//币种
-	Symbol    = "RIA"
+	Symbol    = "XLM"
 	CurveType = owcrypt.ECC_CURVE_ED25519
 	Decimal   = 7
 	//默认配置内容
@@ -48,6 +48,10 @@ type WalletConfig struct {
 	FixFees string
 
 	AddressRetainAmount string
+
+	//是否创建不存在的账号
+	IsCreateNotExistsAccount bool
+	BaseFee string
 }
 
 func NewConfig(symbol string) *WalletConfig {
